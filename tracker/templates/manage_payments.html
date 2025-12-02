@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Payments - Meal Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="display-5 fw-bold mb-2">
+            <i class="bi bi-wallet2 text-primary"></i> Payment Management
+        </h1>
+        <p class="text-muted">Record and track member payments</p>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Add Payment Form -->
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-plus-circle"></i> Record Payment
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="member_id" class="form-label">
+                            <i class="bi bi-person"></i> Member
+                        </label>
+                        <select class="form-select" id="member_id" name="member_id" required>
+                            <option value="">Select a member...</option>
+                            {% for member in members %}
+                            <option value="{{ member.id }}">{{ member.serial_number }}. {{ member.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">
+                            <i class="bi bi-cash-stack"></i> Amount (Tk)
+                        </label>
+                        <input type="number" class="form-control" id="amount" name="amount" step="0.01" min="0"
+                            placeholder="100.00" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="date" class="form-label">
+                            <i class="bi bi-calendar"></i> Payment Date
+                        </label>
+                        <input type="date" class="form-control" id="date" name="date" value="{{ today|date:'Y-m-d' }}"
+                            required>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="note" class="form-label">
+                            <i class="bi bi-sticky"></i> Note (Optional)
+                        </label>
+                        <textarea class="form-control" id="note" name="note" rows="2"
+                            placeholder="Add any notes about this payment..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100">
+                        <i class="bi bi-check-circle"></i> Record Payment
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Member Balance Summary -->
+        {% if members %}
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="bi bi-bar-chart"></i> Quick Balance
+            </div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    {% for member in members %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="fw-semibold">{{ member.name }}</span>
+                        <span
+                            class="badge {% if member.get_unpaid_balance <= 0 %}bg-success{% else %}bg-danger{% endif %} rounded-pill">
+                            {{ member.get_unpaid_balance|floatformat:2 }} Tk
+                        </span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Payment History -->
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history"></i> Recent Payments
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th><i class="bi bi-person"></i> Member</th>
+                                <th class="text-end"><i class="bi bi-cash"></i> Amount</th>
+                                <th><i class="bi bi-calendar"></i> Date</th>
+                                <th><i class="bi bi-sticky"></i> Note</th>
+                                <th class="text-end"><i class="bi bi-clock"></i> Recorded</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for payment in recent_payments %}
+                            <tr>
+                                <td>
+                                    <strong>{{ payment.member.name }}</strong>
+                                    <span class="badge bg-secondary ms-1">{{ payment.member.serial_number }}</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="badge bg-success fs-6">{{ payment.amount }} Tk</span>
+                                </td>
+                                <td>
+                                    {{ payment.payment_date|date:"M d, Y" }}
+                                    {% if payment.payment_date == today %}
+                                    <span class="badge bg-primary ms-1">Today</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if payment.note %}
+                                    <small class="text-muted">{{ payment.note|truncatewords:5 }}</small>
+                                    {% else %}
+                                    <small class="text-muted fst-italic">No note</small>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end text-muted small">
+                                    {{ payment.created_at|date:"M d, g:i A" }}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="bi bi-inbox text-muted fs-1"></i>
+                                    <p class="text-muted mt-3 mb-0">No payments recorded yet. Add your first payment!
+                                    </p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            {% if recent_payments %}
+            <div class="card-footer text-muted small">
+                <i class="bi bi-info-circle"></i> Showing last 20 payments
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Payment Statistics -->
+        {% if recent_payments %}
+        <div class="row mt-3">
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-cash-coin text-success fs-1 mb-2"></i>
+                        <h3 class="fw-bold mb-0">
+                            {% widthratio recent_payments|length 1 1 as count %}
+                            {{ count }}
+                        </h3>
+                        <p class="text-muted mb-0">Total Transactions</p>
+                        <small class="text-muted">Last 20 records</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card">
+                    <div class="card-body text-center">
+                        <i class="bi bi-calendar-check text-primary fs-1 mb-2"></i>
+                        <h3 class="fw-bold mb-0">
+                            {{ recent_payments.first.payment_date|date:"M d" }}
+                        </h3>
+                        <p class="text-muted mb-0">Latest Payment</p>
+                        <small class="text-muted">{{ recent_payments.first.member.name }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

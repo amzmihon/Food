@@ -1,0 +1,24 @@
+# Git
+.git
+.gitignore
+
+# Visual Studio Code
+.vscode
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
+
+# Database
+db.sqlite3
+
+# Build artifacts
+build/
+dist/
+*.spec

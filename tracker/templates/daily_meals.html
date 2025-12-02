@@ -1,0 +1,286 @@
+{% extends 'base.html' %}
+
+{% block title %}Daily Meals - Meal Tracker{% endblock %}
+
+{% block extra_css %}
+<style>
+    .meal-cell {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        border-radius: 0.5rem;
+        transition: all 0.2s ease;
+        border: 2px solid transparent;
+        padding: 0;
+    }
+
+    .meal-cell.ate {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        color: white;
+        border-color: #10b981;
+    }
+
+    .meal-cell.not-ate {
+        background-color: #f3f4f6;
+        color: #9ca3af;
+        border-color: #e5e7eb;
+    }
+
+    .meal-cell:hover {
+        transform: scale(1.15);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .day-header {
+        font-weight: 700;
+        text-align: center;
+        padding: 0.4rem 0.25rem;
+        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+        color: white;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+    }
+
+    .member-row {
+        background: white;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+        margin-bottom: 0.4rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+
+    .member-name {
+        font-weight: 600;
+        color: #1f2937;
+        display: flex;
+        align-items: center;
+        min-width: 100px;
+        font-size: 0.875rem;
+    }
+
+    .today-indicator {
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        color: white;
+        padding: 0.125rem 0.4rem;
+        border-radius: 0.25rem;
+        font-size: 0.625rem;
+        font-weight: 700;
+        margin-top: 0.125rem;
+        display: inline-block;
+    }
+
+    .compact-header {
+        padding: 0.75rem 0;
+        margin-bottom: 0.75rem;
+    }
+
+    .grid-container {
+        overflow-x: auto;
+    }
+
+    .meal-icon {
+        font-size: 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="compact-header">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold mb-1">
+                <i class="bi bi-calendar-day text-primary"></i> Daily Meals
+            </h3>
+            <small class="text-muted">
+                <i class="bi bi-calendar-range"></i>
+                {{ week_start|date:"M d" }} - {{ week_end|date:"M d, Y" }}
+                {% if is_current_week %}
+                <span class="badge bg-success badge-sm ms-1">Current</span>
+                {% endif %}
+            </small>
+        </div>
+        <div class="btn-group btn-group-sm" role="group">
+            <a href="?week={{ week_offset|add:'-1' }}" class="btn btn-outline-primary">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+            {% if not is_current_week %}
+            <a href="?week=0" class="btn btn-primary">
+                <i class="bi bi-calendar-check"></i>
+            </a>
+            {% endif %}
+            <a href="?week={{ week_offset|add:'1' }}" class="btn btn-outline-primary">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Meal Grid -->
+<div class="grid-container">
+    <div class="card">
+        <div class="card-body p-2">
+            <!-- Day Headers -->
+            <div class="row gx-2 mb-2">
+                <div class="col-md-2 col-3">
+                    <small class="text-muted fw-bold">Member</small>
+                </div>
+                {% for day in week_days %}
+                <div class="col">
+                    <div class="day-header">
+                        <div>{{ day|date:"D" }}</div>
+                        <div class="fw-bold">{{ day|date:"d" }}</div>
+                        {% if day == today %}
+                        <span class="today-indicator">NOW</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Member Rows -->
+            {% for row in meal_matrix %}
+            <div class="member-row">
+                <div class="row gx-2 align-items-center">
+                    <div class="col-md-2 col-3">
+                        <div class="member-name">
+                            <i class="bi bi-person-circle text-primary me-1"></i>
+                            {{ row.member.name }}
+                        </div>
+                    </div>
+                    {% for meal in row.meals %}
+                    <div class="col">
+                        <button type="button"
+                            class="meal-cell {% if meal.ate %}ate{% else %}not-ate{% endif %} border-0 w-100 meal-toggle-btn"
+                            data-member-id="{{ row.member.id }}" data-date="{{ meal.date|date:'Y-m-d' }}"
+                            data-ate="{{ meal.ate|yesno:'true,false' }}" title="Click to toggle">
+                            {% if meal.ate %}
+                            <i class="bi bi-check-circle-fill meal-icon"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle meal-icon"></i>
+                            {% endif %}
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-4">
+                <i class="bi bi-inbox text-muted fs-1"></i>
+                <p class="text-muted mt-2 mb-2">No members found. Please add members first.</p>
+                <a href="{% url 'manage_members' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-circle"></i> Add Members
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Compact Legend -->
+<div class="mt-3">
+    <small class="text-muted">
+        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Ate</span>
+        <span class="badge bg-secondary ms-1"><i class="bi bi-x-circle"></i> Didn't Eat</span>
+        <span class="text-muted ms-2">Click cells to toggle</span>
+    </small>
+</div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Get CSRF token
+        const csrftoken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        // Add click handlers to all meal toggle buttons
+        const mealButtons = document.querySelectorAll('.meal-toggle-btn');
+
+        mealButtons.forEach(button => {
+            button.addEventListener('click', function () {
+                const memberId = this.getAttribute('data-member-id');
+                const date = this.getAttribute('data-date');
+                const currentlyAte = this.getAttribute('data-ate') === 'true';
+
+                // Disable button temporarily
+                this.disabled = true;
+
+                // Send AJAX request
+                fetch('{% url "daily_meals" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRFToken': csrftoken,
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: `member_id=${memberId}&date=${date}`
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update button state
+                            const newAte = data.ate;
+                            this.setAttribute('data-ate', newAte);
+
+                            // Update button classes
+                            if (newAte) {
+                                this.classList.remove('not-ate');
+                                this.classList.add('ate');
+                                this.innerHTML = '<i class="bi bi-check-circle-fill meal-icon"></i>';
+                            } else {
+                                this.classList.remove('ate');
+                                this.classList.add('not-ate');
+                                this.innerHTML = '<i class="bi bi-x-circle meal-icon"></i>';
+                            }
+
+                            // Show success toast
+                            showToast('Success', data.message, 'success');
+                        }
+                        this.disabled = false;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showToast('Error', 'Failed to update meal status', 'danger');
+                        this.disabled = false;
+                    });
+            });
+        });
+
+        // Function to show toast notification
+        function showToast(title, message, type) {
+            const toastContainer = document.getElementById('toastContainer');
+
+            // Create toast element without 'show' class
+            const toastHTML = `
+            <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="1000">
+                <div class="toast-header bg-${type} text-white">
+                    <i class="bi bi-${type === 'success' ? 'check-circle' : 'x-circle'} me-2"></i>
+                    <strong class="me-auto">${title}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+                </div>
+                <div class="toast-body">
+                    ${message}
+                </div>
+            </div>
+        `;
+
+            toastContainer.insertAdjacentHTML('beforeend', toastHTML);
+
+            const newToastEl = toastContainer.lastElementChild;
+            const bsToast = new bootstrap.Toast(newToastEl);
+
+            // Remove from DOM after hidden
+            newToastEl.addEventListener('hidden.bs.toast', function () {
+                newToastEl.remove();
+            });
+
+            bsToast.show();
+        }
+    });
+</script>
+{% endblock %}

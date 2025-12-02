@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - Meal Tracker{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 fw-bold mb-2">
+                    <i class="bi bi-speedometer2 text-primary"></i> Weekly Summary
+                </h1>
+                <p class="text-muted mb-0">
+                    <i class="bi bi-calendar-range"></i>
+                    Week: {{ week_start|date:"M d" }} - {{ week_end|date:"M d, Y" }}
+                </p>
+            </div>
+            <div class="text-end">
+                <a href="{% url 'daily_meals' %}" class="btn btn-primary btn-lg">
+                    <i class="bi bi-plus-circle"></i> Mark Meals
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-people-fill text-primary fs-1 mb-2"></i>
+                <h3 class="fw-bold mb-0">{{ member_data|length }}</h3>
+                <p class="text-muted mb-0">Active Members</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-calendar-check-fill text-success fs-1 mb-2"></i>
+                <h3 class="fw-bold mb-0">Total</h3>
+                <p class="text-muted mb-0">Meals This Week</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-currency-dollar text-warning fs-1 mb-2"></i>
+                <h3 class="fw-bold mb-0">Total</h3>
+                <p class="text-muted mb-0">Bills (Tk)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-wallet2 text-info fs-1 mb-2"></i>
+                <h3 class="fw-bold mb-0">Total</h3>
+                <p class="text-muted mb-0">Paid (Tk)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Members Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-table"></i> Member Summary
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Serial</th>
+                                <th>Name</th>
+                                <th class="text-center">Meals</th>
+                                <th class="text-end">Total Bill</th>
+                                <th class="text-end">Paid</th>
+                                <th class="text-end">Unpaid</th>
+                                <th class="text-center">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in member_data %}
+                            <tr>
+                                <td class="text-center fw-bold">{{ member.serial }}</td>
+                                <td class="fw-semibold">{{ member.name }}</td>
+                                <td class="text-center">
+                                    <span class="badge bg-primary">{{ member.meals }}</span>
+                                </td>
+                                <td class="text-end fw-semibold">{{ member.total_bill|floatformat:2 }} Tk</td>
+                                <td class="text-end text-success fw-semibold">{{ member.paid|floatformat:2 }} Tk</td>
+                                <td
+                                    class="text-end fw-bold {% if member.unpaid > 0 %}text-danger{% else %}text-success{% endif %}">
+                                    {{ member.unpaid|floatformat:2 }} Tk
+                                </td>
+                                <td class="text-center">
+                                    {% if member.unpaid <= 0 %} <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> Paid
+                                        </span>
+                                        {% elif member.unpaid < member.total_bill %} <span class="badge bg-warning">
+                                            <i class="bi bi-exclamation-triangle"></i> Partial
+                                            </span>
+                                            {% else %}
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> Unpaid
+                                            </span>
+                                            {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="7" class="text-center py-4">
+                                    <i class="bi bi-inbox text-muted fs-1"></i>
+                                    <p class="text-muted mb-0">No members found. Add members to get started!</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-4 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <i class="bi bi-calendar-day text-primary fs-1 mb-3"></i>
+                <h5 class="card-title">Mark Daily Meals</h5>
+                <p class="card-text text-muted">Record who ate today</p>
+                <a href="{% url 'daily_meals' %}" class="btn btn-primary mt-auto">
+                    <i class="bi bi-pencil-square"></i> Go to Daily Meals
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <i class="bi bi-wallet2 text-success fs-1 mb-3"></i>
+                <h5 class="card-title">Record Payment</h5>
+                <p class="card-text text-muted">Add a new payment</p>
+                <a href="{% url 'manage_payments' %}" class="btn btn-success mt-auto">
+                    <i class="bi bi-cash-stack"></i> Manage Payments
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-3">
+        <div class="card text-center h-100">
+            <div class="card-body d-flex flex-column justify-content-center">
+                <i class="bi bi-currency-dollar text-warning fs-1 mb-3"></i>
+                <h5 class="card-title">Set Meal Price</h5>
+                <p class="card-text text-muted">Update daily pricing</p>
+                <a href="{% url 'manage_price' %}" class="btn btn-warning mt-auto">
+                    <i class="bi bi-tag"></i> Manage Prices
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
