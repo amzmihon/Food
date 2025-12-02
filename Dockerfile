@@ -15,10 +15,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 
 # Make entrypoint executable
-RUN chmod +x /entrypoint.sh
+RUN chmod +x entrypoint.sh
 
 # Expose port
 EXPOSE 8000
 
 # Entrypoint handles migrations, collectstatic, and server start
-ENTRYPOINT ["/entrypoint.sh"]
+ENTRYPOINT ["/app/entrypoint.sh"]
