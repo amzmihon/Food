@@ -7,7 +7,7 @@ class Member(models.Model):
     """Model for tracking meal members"""
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
-    serial_number = models.IntegerField(unique=True)
+    serial_number = models.IntegerField(unique=True, null=True, blank=True)
     user = models.OneToOneField(
         User,
         on_delete=models.SET_NULL,
@@ -23,6 +23,13 @@ class Member(models.Model):
 
     def __str__(self):
         return f"{self.serial_number}. {self.name}"
+
+    def save(self, *args, **kwargs):
+        """Auto-assign serial if missing, while allowing admin overrides."""
+        if self.serial_number is None:
+            max_serial = Member.objects.aggregate(max=models.Max('serial_number'))['max'] or 0
+            self.serial_number = max_serial + 1
+        super().save(*args, **kwargs)
 
     def get_weekly_meals(self, start_date=None):
         """Calculate total meals for current week"""

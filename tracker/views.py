@@ -402,15 +402,19 @@ def manage_members(request):
         
         if action == 'add':
             name = request.POST.get('name')
-            serial = request.POST.get('serial_number')
+            serial_raw = request.POST.get('serial_number')
+            serial = None
+            if serial_raw:
+                try:
+                    serial = int(serial_raw)
+                except ValueError:
+                    messages.error(request, "Serial must be a number.")
+                    return redirect('manage_members')
             
-            if name and serial:
-                Member.objects.create(
-                    name=name,
-                    serial_number=serial,
-                    is_active=True
-                )
-                messages.success(request, f"Added member: {name}")
+            if name:
+                member = Member(name=name, serial_number=serial, is_active=True)
+                member.save()
+                messages.success(request, f"Added member: {member.name} (#{member.serial_number})")
         
         elif action == 'edit':
             member_id = request.POST.get('member_id')
