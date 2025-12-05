@@ -21,3 +21,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('tracker.urls')),
 ]
+
+# Custom error handlers
+handler403 = 'tracker.views.error_403'
+handler404 = 'tracker.views.error_404'
+handler500 = 'tracker.views.error_500'

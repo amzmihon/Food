@@ -23,6 +23,30 @@ def _redirect_non_staff(request):
     return None
 
 
+def csrf_failure(request, reason="", template_name="403_csrf.html"):
+    """Custom CSRF error handler with friendly UI."""
+    context = {
+        'reason': reason,
+        'request_path': request.path,
+    }
+    return render(request, template_name, context, status=403)
+
+
+def error_403(request, exception=None):
+    """General forbidden page (non-CSRF)."""
+    return render(request, '403.html', {'request_path': request.path}, status=403)
+
+
+def error_404(request, exception=None):
+    """Not found page."""
+    return render(request, '404.html', {'request_path': request.path}, status=404)
+
+
+def error_500(request):
+    """Server error page."""
+    return render(request, '500.html', status=500)
+
+
 def login_view(request):
     """Authenticate admin/staff or regular users."""
     if request.user.is_authenticated:

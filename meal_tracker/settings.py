@@ -42,6 +42,7 @@ else:
 
 csrf_trusted = os.environ.get('DJANGO_CSRF_TRUSTED_ORIGINS', '')
 CSRF_TRUSTED_ORIGINS = [h.strip() for h in csrf_trusted.split(',') if h.strip()]
+CSRF_FAILURE_VIEW = 'tracker.views.csrf_failure'
 
 
 # Application definition

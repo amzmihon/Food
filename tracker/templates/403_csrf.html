@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Request Blocked | Meal Tracker</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #f6f7fb 0%, #eef1ff 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+        }
+        .error-card {
+            background: #fff;
+            border-radius: 1.25rem;
+            box-shadow: 0 12px 30px rgba(79, 70, 229, 0.12);
+            max-width: 680px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .error-head {
+            background: linear-gradient(135deg, #5b46f0 0%, #6b63ff 100%);
+            color: #fff;
+            padding: 1.5rem 1.75rem;
+        }
+        .badge-code {
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-weight: 700;
+            padding: 0.35rem 0.75rem;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+        }
+        .error-body {
+            padding: 1.75rem;
+        }
+        .step-list li {
+            margin-bottom: 0.35rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="error-card">
+        <div class="error-head d-flex justify-content-between align-items-center">
+            <div>
+                <h4 class="mb-1"><i class="bi bi-shield-exclamation"></i> Forbidden</h4>
+                <p class="mb-0">CSRF verification failed. Your request was blocked.</p>
+            </div>
+            <span class="badge-code">403</span>
+        </div>
+        <div class="error-body">
+            <p class="text-muted mb-3">
+                This usually happens if the page sat open too long or your session expired before you submitted the form.
+            </p>
+            <ul class="step-list text-muted">
+                <li>Refresh the page and try again.</li>
+                <li>If prompted, log in again to restore your session.</li>
+                <li>Submit the form one more time after the refresh.</li>
+            </ul>
+            <div class="d-flex flex-wrap gap-2 mt-4">
+                <a class="btn btn-primary" href="javascript:location.reload();"><i class="bi bi-arrow-clockwise"></i> Reload</a>
+                <a class="btn btn-outline-secondary" href="/"><i class="bi bi-house-door"></i> Go home</a>
+                <a class="btn btn-outline-primary" href="/login/"><i class="bi bi-box-arrow-in-right"></i> Login</a>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+</body>
+</html>
