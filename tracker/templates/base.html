@@ -172,44 +172,80 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% url 'dashboard' %}">
+            <a class="navbar-brand" href="{% if user.is_authenticated and not user.is_staff %}{% url 'my_meals' %}{% else %}{% url 'dashboard' %}{% endif %}">
                 <i class="bi bi-calendar-check"></i> Meal Tracker
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto">
+                <ul class="navbar-nav ms-auto align-items-lg-center">
+                    {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
-                            href="{% url 'dashboard' %}">
-                            <i class="bi bi-speedometer2"></i> Dashboard
+                        <a class="nav-link {% if request.resolver_match.url_name == 'my_meals' %}active{% endif %}"
+                            href="{% url 'my_meals' %}">
+                            <i class="bi bi-egg-fried"></i> My Meals
+                        </a>
+                    </li>
+                    {% if user.is_staff %}
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}"
+                                href="{% url 'dashboard' %}">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'daily_meals' %}active{% endif %}"
+                                href="{% url 'daily_meals' %}">
+                                <i class="bi bi-calendar-day"></i> Daily Meals
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'manage_price' %}active{% endif %}"
+                                href="{% url 'manage_price' %}">
+                                <i class="bi bi-currency-dollar"></i> Prices
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'manage_payments' %}active{% endif %}"
+                                href="{% url 'manage_payments' %}">
+                                <i class="bi bi-wallet2"></i> Payments
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.resolver_match.url_name == 'manage_members' %}active{% endif %}"
+                                href="{% url 'manage_members' %}">
+                                <i class="bi bi-people"></i> Members
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin:index' %}">
+                                <i class="bi bi-shield-lock"></i> Admin
+                            </a>
+                        </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'password_change' %}active{% endif %}"
+                            href="{% url 'password_change' %}">
+                            <i class="bi bi-key"></i> Change Password
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'daily_meals' %}active{% endif %}"
-                            href="{% url 'daily_meals' %}">
-                            <i class="bi bi-calendar-day"></i> Daily Meals
-                        </a>
+                        <form method="post" action="{% url 'logout' %}" class="d-lg-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-light btn-sm ms-lg-2 mt-2 mt-lg-0">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </button>
+                        </form>
                     </li>
+                    {% else %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'manage_price' %}active{% endif %}"
-                            href="{% url 'manage_price' %}">
-                            <i class="bi bi-currency-dollar"></i> Prices
+                        <a class="nav-link {% if request.resolver_match.url_name == 'login' %}active{% endif %}"
+                            href="{% url 'login' %}">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
                         </a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'manage_payments' %}active{% endif %}"
-                            href="{% url 'manage_payments' %}">
-                            <i class="bi bi-wallet2"></i> Payments
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'manage_members' %}active{% endif %}"
-                            href="{% url 'manage_members' %}">
-                            <i class="bi bi-people"></i> Members
-                        </a>
-                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

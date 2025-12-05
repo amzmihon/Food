@@ -1,13 +1,175 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
 from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from datetime import date, timedelta
 from .models import Member, MealPrice, MealRecord, Payment
 
 
+def _admin_exists():
+    """Check if any staff/superuser accounts exist."""
+    return User.objects.filter(is_staff=True).exists()
+
+
+def _redirect_non_staff(request):
+    """Send non-admin users away from admin-only areas."""
+    if not request.user.is_staff:
+        messages.error(request, "Admin access required.")
+        return redirect('my_meals')
+    return None
+
+
+def login_view(request):
+    """Authenticate admin/staff or regular users."""
+    if request.user.is_authenticated:
+        return redirect('dashboard') if request.user.is_staff else redirect('my_meals')
+
+    next_url = request.GET.get('next', '')
+    admin_present = _admin_exists()
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        password = request.POST.get('password', '')
+        next_url = request.POST.get('next', next_url)
+
+        user = authenticate(request, username=username, password=password)
+        if user:
+            login(request, user)
+            messages.success(request, f"Welcome back, {user.username}!")
+
+            if next_url and url_has_allowed_host_and_scheme(
+                url=next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure()
+            ):
+                return redirect(next_url)
+            return redirect('dashboard') if user.is_staff else redirect('my_meals')
+
+        messages.error(request, "Invalid username or password.")
+
+    return render(request, 'login.html', {
+        'next': next_url,
+        'allow_admin_signup': not admin_present
+    })
+
+
+def admin_signup(request):
+    """Allow creating the very first admin account."""
+    if _admin_exists():
+        messages.info(request, "An admin already exists. Please log in.")
+        return redirect('login')
+
+    if request.user.is_authenticated:
+        return redirect('dashboard') if request.user.is_staff else redirect('my_meals')
+
+    if request.method == 'POST':
+        username = request.POST.get('username', '').strip()
+        email = request.POST.get('email', '').strip()
+        password1 = request.POST.get('password1', '')
+        password2 = request.POST.get('password2', '')
+
+        if not username or not password1:
+            messages.error(request, "Username and password are required.")
+        elif password1 != password2:
+            messages.error(request, "Passwords do not match.")
+        elif User.objects.filter(username=username).exists():
+            messages.error(request, "Username already taken.")
+        else:
+            User.objects.create_superuser(username=username, email=email, password=password1)
+            messages.success(request, "Admin account created. Please log in.")
+            return redirect('login')
+
+    return render(request, 'admin_signup.html')
+
+
+@login_required
+def logout_view(request):
+    """Log the current user out."""
+    logout(request)
+    messages.success(request, "You have been logged out.")
+    return redirect('login')
+
+
+@login_required
+def my_meals(request):
+    """Allow a user to view and set their own meal decision before 10:30 AM."""
+    member = getattr(request.user, 'member_profile', None)
+    today = timezone.localdate()
+    now = timezone.localtime()
+    deadline = now.replace(hour=10, minute=30, second=0, microsecond=0)
+    locked = now >= deadline
+
+    if request.method == 'POST':
+        if not member:
+            messages.error(request, "Your account is not linked to a member. Please contact an admin.")
+            return redirect('my_meals')
+
+        if locked:
+            messages.error(request, "Changes are locked after 10:30 AM.")
+            return redirect('my_meals')
+
+        decision = request.POST.get('decision')
+        if decision not in ('eat', 'skip'):
+            messages.error(request, "Invalid meal selection.")
+            return redirect('my_meals')
+
+        record, _ = MealRecord.objects.get_or_create(member=member, date=today)
+        record.ate_meal = decision == 'eat'
+        record.save()
+        status_label = "eating" if record.ate_meal else "skipping"
+        messages.success(request, f"You are marked as {status_label} today.")
+        return redirect('my_meals')
+
+    today_record = None
+    if member:
+        today_record = MealRecord.objects.filter(member=member, date=today).first()
+
+    week_start = Member.get_week_start(today)
+    week_days = [week_start + timedelta(days=i) for i in range(7)]
+    week_records = {}
+    if member:
+        week_records = {
+            rec.date: rec
+            for rec in MealRecord.objects.filter(
+                member=member,
+                date__gte=week_start,
+                date__lte=week_start + timedelta(days=6)
+            )
+        }
+    week_rows = [{'date': day, 'record': week_records.get(day)} for day in week_days]
+
+    context = {
+        'member': member,
+        'today': today,
+        'today_record': today_record,
+        'locked': locked,
+        'deadline': deadline,
+        'current_time': now,
+        'week_start': week_start,
+        'week_end': week_start + timedelta(days=6),
+        'week_days': week_days,
+        'week_records': week_records,
+        'week_rows': week_rows,
+        'week_meals': member.get_weekly_meals(week_start) if member else 0,
+        'week_total': member.get_weekly_total_bill(week_start) if member else 0,
+        'unpaid_balance': member.get_unpaid_balance(week_start) if member else 0,
+        'price_today': MealPrice.get_price_for_date(today) if member else 0,
+    }
+
+    return render(request, 'my_meals.html', context)
+
+
+@login_required
 def dashboard(request):
     """Main dashboard showing weekly summary"""
+    redirect_resp = _redirect_non_staff(request)
+    if redirect_resp:
+        return redirect_resp
+
     # Get current week start (Saturday)
     today = date.today()
     week_start = Member.get_week_start(today)
@@ -43,8 +205,13 @@ def dashboard(request):
     return render(request, 'dashboard.html', context)
 
 
+@login_required
 def daily_meals(request):
     """Interface for marking daily meals"""
+    redirect_resp = _redirect_non_staff(request)
+    if redirect_resp:
+        return redirect_resp
+
     # Get week offset from URL parameter (0 = current week, -1 = previous, +1 = next)
     week_offset = int(request.GET.get('week', 0))
     
@@ -121,8 +288,13 @@ def daily_meals(request):
     return render(request, 'daily_meals.html', context)
 
 
+@login_required
 def manage_price(request):
     """Manage meal prices"""
+    redirect_resp = _redirect_non_staff(request)
+    if redirect_resp:
+        return redirect_resp
+
     if request.method == 'POST':
         price_date = request.POST.get('date')
         price_amount = request.POST.get('price')
@@ -154,8 +326,13 @@ def manage_price(request):
     return render(request, 'manage_price.html', context)
 
 
+@login_required
 def manage_payments(request):
     """Manage payments"""
+    redirect_resp = _redirect_non_staff(request)
+    if redirect_resp:
+        return redirect_resp
+
     if request.method == 'POST':
         member_id = request.POST.get('member_id')
         amount = request.POST.get('amount')
@@ -189,8 +366,13 @@ def manage_payments(request):
     return render(request, 'manage_payments.html', context)
 
 
+@login_required
 def manage_members(request):
     """Manage members"""
+    redirect_resp = _redirect_non_staff(request)
+    if redirect_resp:
+        return redirect_resp
+
     if request.method == 'POST':
         action = request.POST.get('action')
         

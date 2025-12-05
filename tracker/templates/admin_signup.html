@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Admin | Meal Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-md-8 col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-header text-center">
+                <i class="bi bi-person-plus"></i> Create First Admin
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-warning">
+                    <strong>First-time setup:</strong> No admin account exists yet. Create one to manage members, prices, and payments.
+                </div>
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" placeholder="admin" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email (optional)</label>
+                        <input type="email" class="form-control" id="email" name="email" placeholder="admin@example.com">
+                    </div>
+                    <div class="mb-3">
+                        <label for="password1" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password1" name="password1" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password2" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="password2" name="password2" required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check2-circle"></i> Create Admin
+                        </button>
+                        <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Back to login
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

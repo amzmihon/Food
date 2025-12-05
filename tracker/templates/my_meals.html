@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+
+{% block title %}My Meals | Meal Tracker{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center mt-4">
+    <div class="col-lg-10">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <h3 class="mb-0"><i class="bi bi-egg-fried"></i> My Meals</h3>
+            <span class="text-muted small">Changes close daily at {{ deadline|date:"g:i A" }}</span>
+        </div>
+
+        {% if not member %}
+            <div class="alert alert-warning">
+                Your account is not linked to a member profile yet. Please ask an admin to connect you so you can set your meals.
+            </div>
+        {% else %}
+        <div class="row g-3">
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <span>Today's Meal — {{ today }}</span>
+                        {% if today_record %}
+                            <span class="badge bg-{{ today_record.ate_meal|yesno:'success,danger' }}">
+                                {{ today_record.ate_meal|yesno:'Eating,Skipping' }}
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not set</span>
+                        {% endif %}
+                    </div>
+                    <div class="card-body">
+                        <p class="mb-1 text-muted">Price today: {{ price_today }} Tk</p>
+                        <p class="mb-3 small text-muted">Current time: {{ current_time|date:"g:i A" }} (lock at {{ deadline|date:"g:i A" }})</p>
+
+                        {% if locked %}
+                            <div class="alert alert-info mb-3">
+                                Changes are locked for today.
+                            </div>
+                        {% endif %}
+
+                        <div class="d-grid gap-2 d-md-flex">
+                            <form method="post" class="me-2">
+                                {% csrf_token %}
+                                <input type="hidden" name="decision" value="eat">
+                                <button type="submit" class="btn btn-success" {% if locked %}disabled{% endif %}>
+                                    <i class="bi bi-check2-circle"></i> I'm eating today
+                                </button>
+                            </form>
+                            <form method="post">
+                                {% csrf_token %}
+                                <input type="hidden" name="decision" value="skip">
+                                <button type="submit" class="btn btn-outline-danger" {% if locked %}disabled{% endif %}>
+                                    <i class="bi bi-x-circle"></i> I'm skipping today
+                                </button>
+                            </form>
+                        </div>
+                        {% if locked and not today_record %}
+                            <p class="text-danger mt-2 small">No decision was submitted before the cutoff.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="card h-100">
+                    <div class="card-header">
+                        This Week ({{ week_start }} - {{ week_end }})
+                    </div>
+                    <div class="card-body">
+                        <ul class="list-group list-group-flush">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Meals this week
+                                <span class="badge bg-primary">{{ week_meals }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Estimated bill
+                                <span class="badge bg-secondary">{{ week_total }} Tk</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Unpaid balance
+                                <span class="badge bg-warning text-dark">{{ unpaid_balance }} Tk</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                Weekly decisions
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in week_rows %}
+                            <tr>
+                                <td>{{ row.date }}</td>
+                                {% if row.record %}
+                                    <td>
+                                        <span class="badge bg-{{ row.record.ate_meal|yesno:'success,danger' }}">
+                                            {{ row.record.ate_meal|yesno:'Eating,Skipping' }}
+                                        </span>
+                                    </td>
+                                {% else %}
+                                    <td><span class="badge bg-secondary">Not set</span></td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

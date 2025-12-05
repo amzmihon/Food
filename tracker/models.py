@@ -1,5 +1,5 @@
 from django.db import models
-from django.utils import timezone
+from django.contrib.auth.models import User
 from datetime import date, timedelta
 
 
@@ -8,6 +8,14 @@ class Member(models.Model):
     name = models.CharField(max_length=100)
     is_active = models.BooleanField(default=True)
     serial_number = models.IntegerField(unique=True)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='member_profile',
+        null=True,
+        blank=True,
+        help_text="Optional link to an auth user for self-service access"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
